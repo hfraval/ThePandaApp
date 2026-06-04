@@ -3,7 +3,7 @@ name: ThePandaApp
 options:
   bundleIdPrefix: com.thepandaapp
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "17.0"
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
   defaultConfig: Debug
@@ -13,7 +13,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     SWIFT_STRICT_CONCURRENCY: complete
     DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
     ENABLE_TESTABILITY: YES

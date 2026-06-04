@@ -1,47 +1,44 @@
 import XCTest
 import TPACore
 import TPAFoundation
-import TPAUIKit
 import TPAUnitTestFoundation
 @testable import TPAAuth
 
 @MainActor
-private final class CaptureLoginDelegate: ViewModelProviderDelegate {
-    var latest: LoginViewModel?
-    func viewModelUpdated(_ viewModel: LoginViewModel) { latest = viewModel }
-}
-
-@MainActor
 final class LoginLoadingResetTests: AppTestCase {
     private var provider: LoginViewModelProvider!
-    private var capture: CaptureLoginDelegate!
-    private var anyDelegate: AnyViewModelProviderDelegate<LoginViewModel>!
 
     override func setUp() async throws {
         try await super.setUp()
         provider = LoginViewModelProvider()
-        capture = CaptureLoginDelegate()
-        anyDelegate = AnyViewModelProviderDelegate(capture)
-        provider.delegate = anyDelegate
     }
 
     override func tearDown() async throws {
-        provider = nil; capture = nil; anyDelegate = nil
+        provider = nil
         try await super.tearDown()
     }
 
-    func test_submitting_thenSucceeded_clearsLoading() {
-        post(LoginEvents.Submitting())
-        XCTAssertTrue(capture.latest?.isLoading == true)
-
-        post(LoginEvents.Succeeded(userId: "1"))
-        XCTAssertFalse(capture.latest?.isLoading == true)
+    /// Events now reach the provider through an `AsyncStream` consumed on a `Task`, so let the
+    /// run loop drain after posting before reading the observable view model.
+    private func drain() async {
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
     }
 
-    func test_signedOut_resetsToIdle() {
+    func test_submitting_thenSucceeded_returnsToIdle() async {
+        post(LoginEvents.Submitting())
+        await drain()
+        XCTAssertEqual(provider.viewModel, .loading)
+
+        post(LoginEvents.Succeeded(userId: "1"))
+        await drain()
+        XCTAssertEqual(provider.viewModel, .idle)
+    }
+
+    func test_signedOut_resetsToIdle() async {
         post(LoginEvents.Submitting())
         post(AuthEvents.SignedOut())
-        XCTAssertFalse(capture.latest?.isLoading == true)
-        XCTAssertNil(capture.latest?.errorMessage)
+        await drain()
+        XCTAssertEqual(provider.viewModel, .idle)
     }
 }

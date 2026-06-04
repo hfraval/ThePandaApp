@@ -1,53 +1,31 @@
 import Foundation
 import TPACore
 import TPAFoundation
-import TPAUIKit
+import Observation
 
 @MainActor
 protocol LoginViewModelProviderProtocol: AnyObject {
-    var delegate: AnyViewModelProviderDelegate<LoginViewModel>? { get set }
+    var viewModel: LoginViewModel { get }
 }
 
+/// Read-only source of the login screen's render state. SwiftUI-native: it's `@Observable` and the
+/// `LoginScreen` resolves it and owns it via `@State`, so writing `viewModel` re-renders the view
+/// automatically — no delegate, no bridge. Data flows one way: the provider is the only writer; the
+/// view only reads.
 @MainActor
+@Observable
 final class LoginViewModelProvider: LoginViewModelProviderProtocol {
-    private let viewModelFactory: LoginViewModelFactory
 
-    private var isLoading = false
-    private var errorMessage: String?
+    private(set) var viewModel: LoginViewModel = .idle
 
-    weak var delegate: AnyViewModelProviderDelegate<LoginViewModel>? {
-        didSet { updateDelegate() }
-    }
+    /// Owns the event subscriptions; cancels them when this provider is released. Not view state.
+    @ObservationIgnored
+    private let observations = EventObservations()
 
-    init(viewModelFactory: LoginViewModelFactory = .init()) {
-        self.viewModelFactory = viewModelFactory
-        observe(self, event: LoginEvents.Submitting.self, selector: #selector(handleSubmitting))
-        observe(self, event: LoginEvents.Failed.self, selector: #selector(handleFailed(_:)))
-        observe(self, event: LoginEvents.Succeeded.self, selector: #selector(handleReset))
-        observe(self, event: AuthEvents.SignedOut.self, selector: #selector(handleReset))
-    }
-
-    @objc private func handleSubmitting() {
-        isLoading = true
-        errorMessage = nil
-        updateDelegate()
-    }
-
-    @objc private func handleFailed(_ note: Notification) {
-        isLoading = false
-        errorMessage = (note.eventPayload() as LoginEvents.Failed?)?.reason
-        updateDelegate()
-    }
-
-    @objc private func handleReset() {
-        isLoading = false
-        errorMessage = nil
-        updateDelegate()
-    }
-
-    private func updateDelegate() {
-        delegate?.viewModelUpdated(
-            viewModelFactory.make(isLoading: isLoading, errorMessage: errorMessage)
-        )
+    init() {
+        observations.observe(LoginEvents.Submitting.self, on: self) { provider, _ in provider.viewModel = .loading }
+        observations.observe(LoginEvents.Failed.self, on: self) { provider, event in provider.viewModel = .error(message: event.reason) }
+        observations.observe(LoginEvents.Succeeded.self, on: self) { provider, _ in provider.viewModel = .idle }
+        observations.observe(AuthEvents.SignedOut.self, on: self) { provider, _ in provider.viewModel = .idle }
     }
 }

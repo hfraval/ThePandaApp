@@ -1,4 +1,5 @@
 import UIKit
+import SwiftUI
 import TPAUIKit
 import TPAAuth
 import TPAProfile
@@ -9,8 +10,10 @@ final class ProfileTabViewController: CoordinatedStackContentViewController<Prof
     init() {
         let profileViewController = ProfileViewController()
 
-        let login = ClosureCoordinatedContent<LoginViewController, ProfileTabContentModel>(
-            LoginViewController(),
+        // Login is the SwiftUI pilot — a SwiftUI `LoginScreen` hosted via `HostingContent` so it
+        // slots into the UIKit coordinated tab exactly like a UIKit child (see SWIFTUI_PILOT.md).
+        let login = ClosureCoordinatedContent<HostingContent<LoginScreen>, ProfileTabContentModel>(
+            HostingContent(LoginScreen()),
             shouldShow: { !$0.isSignedIn }
         )
         let profile = ClosureCoordinatedContent<ProfileViewController, ProfileTabContentModel>(

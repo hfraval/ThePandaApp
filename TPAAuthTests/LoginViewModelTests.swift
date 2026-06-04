@@ -2,15 +2,8 @@ import XCTest
 import TPACore
 import TPAAnalytics
 import TPAFoundation
-import TPAUIKit
 import TPAUnitTestFoundation
 @testable import TPAAuth
-
-@MainActor
-private final class CaptureDelegate: ViewModelProviderDelegate {
-    var latest: LoginViewModel?
-    func viewModelUpdated(_ viewModel: LoginViewModel) { latest = viewModel }
-}
 
 @MainActor
 final class ValidateLoginCommandTests: AppTestCase {
@@ -103,41 +96,40 @@ final class LoginActionTests: AppTestCase {
 @MainActor
 final class LoginViewModelProviderTests: AppTestCase {
     private var provider: LoginViewModelProvider!
-    private var capture: CaptureDelegate!
-    private var anyDelegate: AnyViewModelProviderDelegate<LoginViewModel>!
 
     override func setUp() async throws {
         try await super.setUp()
         provider = LoginViewModelProvider()
-        capture = CaptureDelegate()
-        anyDelegate = AnyViewModelProviderDelegate(capture)
-        provider.delegate = anyDelegate
     }
 
     override func tearDown() async throws {
         provider = nil
-        capture = nil
-        anyDelegate = nil
         try await super.tearDown()
     }
 
-    private var current: LoginViewModel { capture.latest! }
+    private var current: LoginViewModel { provider.viewModel }
 
-    func test_initial_notLoading_noError() {
-        XCTAssertFalse(current.isLoading)
-        XCTAssertNil(current.errorMessage)
+    /// Events reach the provider through an `AsyncStream` consumed on a `Task`, so let the run loop
+    /// drain after posting before reading the observable view model.
+    private func drain() async {
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
     }
 
-    func test_submittingEvent_showsLoading_clearsError() {
+    func test_initial_isIdle() {
+        XCTAssertEqual(current, .idle)
+    }
+
+    func test_submittingEvent_isLoading() async {
         post(LoginEvents.Submitting())
-        XCTAssertTrue(current.isLoading)
-        XCTAssertNil(current.errorMessage)
+        await drain()
+        XCTAssertEqual(current, .loading)
     }
 
-    func test_failedEvent_hidesLoading_showsError() {
+    func test_failedEvent_isError() async {
         post(LoginEvents.Submitting())
         post(LoginEvents.Failed(reason: "Nope"))
-        XCTAssertFalse(current.isLoading)
-        XCTAssertEqual(current.errorMessage, "Nope")
+        await drain()
+        XCTAssertEqual(current, .error(message: "Nope"))
     }
 }
