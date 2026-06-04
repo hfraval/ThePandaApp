@@ -4,6 +4,11 @@
 > whole provider/action/service/event layer is unchanged. All `LoginUITests` pass against the
 > SwiftUI screen (incl. the full sign-in → profile journey), full suite + all three brands green.
 > See **§10 Results**.
+>
+> **Update:** the `ViewModelStore` + delegate bridge described below was a transitional device. It
+> has since been **removed** for Login in favour of an `@Observable` provider the SwiftUI view owns
+> directly via `@State` — see `SWIFTUI_CONCURRENCY_MODERNIZATION.md` §6a. The delegate machinery
+> (`AnyViewModelProviderDelegate`) still backs the remaining UIKit screens.
 > **Goal:** prove that our unidirectional data-flow architecture survives replacing the UIKit
 > `View` + `ViewController` pair with a single **SwiftUI `View`** (which plays both roles, with a
 > SwiftUI lifecycle), while keeping `ViewModelProvider` / `Action` / `Service` / `Event` / `Command`

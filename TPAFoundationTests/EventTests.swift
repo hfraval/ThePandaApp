@@ -90,3 +90,55 @@ final class EventTests: TestCase {
         XCTAssertEqual(received, SampleEvent(value: 7))
     }
 }
+
+@MainActor
+private final class ObservingTarget {
+    var received: [SampleEvent] = []
+}
+
+@MainActor
+final class EventObservationsTests: TestCase {
+
+    override func setUp() async throws {
+        try await super.setUp()
+        ServiceContainer.shared.registerInstance(NotificationCenter(), as: NotificationCenter.self)
+    }
+
+    /// Each `observe` spins up its consumer `Task`; let it start (and register its observer) before
+    /// posting, then let delivery run before asserting.
+    private func settle() async {
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
+    }
+
+    func test_observe_invokesHandlerWithTargetAndPayload() async {
+        let observations = EventObservations()
+        let target = ObservingTarget()
+        observations.observe(SampleEvent.self, on: target) { target, event in
+            target.received.append(event)
+        }
+        await settle()
+
+        post(SampleEvent(value: 5))
+        await settle()
+
+        XCTAssertEqual(target.received, [SampleEvent(value: 5)])
+    }
+
+    func test_releasingBag_cancelsObservation() async {
+        let target = ObservingTarget()
+        var observations: EventObservations? = EventObservations()
+        observations?.observe(SampleEvent.self, on: target) { target, event in
+            target.received.append(event)
+        }
+        await settle()
+
+        observations = nil          // deinit → cancels the subscription's task → removes observer
+        await settle()
+
+        post(SampleEvent(value: 9))
+        await settle()
+
+        XCTAssertTrue(target.received.isEmpty)
+    }
+}

@@ -2,21 +2,24 @@ import SwiftUI
 import TPAUIKit
 import TPAFoundation
 
-/// SwiftUI Login screen — the pilot proving the unidirectional architecture works without a
-/// separate `View` + `ViewController`. It owns the read-only `LoginViewModelProvider` via a
-/// `ViewModelStore` (data down), keeps raw input as view-local `@State`, validates with
-/// `ValidateLoginCommand`, and outputs through `LoginAction` (intent out). The provider/action/
-/// service/event layer is unchanged.
+/// SwiftUI Login screen — proves the unidirectional architecture works without a separate `View` +
+/// `ViewController`. It resolves the read-only `@Observable` provider and owns it via `@State`
+/// (data down — SwiftUI re-renders when `provider.viewModel` changes), keeps raw input as view-local
+/// `@State`, validates with `ValidateLoginCommand`, and outputs through `LoginAction` (intent out).
+///
+/// Static copy (titles, placeholders, button text) is a View concern and lives here via `localize`.
+/// The view model carries only the dynamic state: `.idle` / `.loading` / `.error`.
 public struct LoginScreen: View {
 
-    @State private var store = ViewModelStore<LoginViewModel>(LoginViewModelProvider()) {
-        provider, delegate in provider.delegate = delegate
-    }
+    @State private var provider: any LoginViewModelProviderProtocol
 
     @State private var email = ""
     @State private var password = ""
 
-    public init() {}
+    public init() {
+        @Resolved var resolved: LoginViewModelProviderProtocol
+        _provider = State(initialValue: resolved)
+    }
 
     public var body: some View {
         ZStack {
@@ -29,30 +32,30 @@ public struct LoginScreen: View {
                         .foregroundColor(Color(AppColors.primary))
                         .padding(.top, 48)
 
-                    Text(store.viewModel?.title ?? "")
+                    Text(localize("login.title"))
                         .font(.largeTitle).bold()
                         .multilineTextAlignment(.center)
 
-                    Text(store.viewModel?.subtitle ?? "")
+                    Text(localize("login.subtitle"))
                         .font(.subheadline)
                         .foregroundColor(Color(AppColors.secondaryText))
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 20)
 
-                    TextField(store.viewModel?.emailPlaceholder ?? "", text: $email)
+                    TextField(localize("login.email.placeholder"), text: $email)
                         .textFieldStyle(.roundedBorder)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("login-email-field")
 
-                    SecureField(store.viewModel?.passwordPlaceholder ?? "", text: $password)
+                    SecureField(localize("login.password.placeholder"), text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .accessibilityIdentifier("login-password-field")
 
-                    if let error = store.viewModel?.errorMessage {
-                        Text(error)
+                    if case .error(let message) = provider.viewModel {
+                        Text(message)
                             .font(.footnote)
                             .foregroundColor(Color(AppColors.error))
                             .multilineTextAlignment(.center)
@@ -60,7 +63,7 @@ public struct LoginScreen: View {
                     }
 
                     Button(action: submit) {
-                        Text(store.viewModel?.loginButtonTitle ?? "")
+                        Text(localize("login.button.login"))
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity, minHeight: 52)
@@ -74,9 +77,9 @@ public struct LoginScreen: View {
                 .padding(24)
             }
 
-            if store.viewModel?.isLoading == true {
+            if case .loading = provider.viewModel {
                 Color(AppColors.background).opacity(0.85).ignoresSafeArea()
-                ProgressView(store.viewModel?.loadingMessage ?? "")
+                ProgressView(localize("login.loading.message"))
             }
         }
     }

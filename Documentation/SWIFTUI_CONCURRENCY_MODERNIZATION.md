@@ -166,3 +166,132 @@ actor — none exists today.
   synchronous event posting; the real off-main work belongs in `TPANetwork`. See §4.
 - Mass-migrating other providers to `events(of:)` — the primitive is in place; migrate per-screen
   when each is touched.
+
+---
+
+## 6. Follow-up — view model as a state enum (post-migration cleanup)
+
+A second pass simplified the view model itself, applying `CLAUDE.md` §3 ("static UI text is a View
+concern; the VM carries only dynamic data") more strictly:
+
+- **`LoginViewModelFactory` deleted.** It only ever assembled static localized copy.
+- **Static copy moved into `LoginScreen`** via `localize(...)` — title, subtitle, placeholders,
+  button title, loading message. (These never change while the screen is shown.) `navigationTitle`
+  was dead and dropped.
+- **`LoginViewModel` is now a state enum**, not a struct of flags:
+  ```swift
+  public enum LoginViewModel: Equatable, Sendable {
+      case idle                      // default: form ready for input
+      case loading                   // attempt in flight
+      case error(message: String)    // last attempt failed (already-localized message)
+  }
+  ```
+  Illegal combinations (`isLoading == true` *and* an `errorMessage`) are now unrepresentable.
+- **`LoginViewModelProvider` lost its stored `isLoading`/`errorMessage`.** Each event handler pushes
+  the corresponding case directly (`.loading` / `.error` / `.idle`); the initial push (on delegate
+  `didSet`) is `.idle`. No factory, no derived-state bookkeeping.
+- **The View** derives `isLoading` / `errorMessage` from the enum with two small `if case …?`
+  helpers; the body's conditionals are otherwise unchanged.
+- **Tests** assert on the enum directly (`XCTAssertEqual(current, .error(message: "Nope"))`), which is
+  tighter than the old two-field checks. Full suite + all three brands still green.
+
+**Naming:** the default case is `.idle` (the conventional `idle / loading / error` triad). Trivially
+renamable to `.login` / `.default` / `.display` if preferred — it's a single enum case.
+
+### 6a. Observable VMP — the View owns the provider directly (delegate + store removed)
+
+The original SwiftUI pilot kept the UIKit-era contract verbatim: the VMP pushed an immutable VM
+through a **weak `AnyViewModelProviderDelegate`**, and a generic **`ViewModelStore`** adapted that
+push into `@Observable` so a SwiftUI view could observe it. That bridge existed only because the VMP
+spoke *delegate*. For a SwiftUI-only screen it's pure indirection.
+
+So Login now uses the **native SwiftUI mechanism** the bridge was emulating:
+
+- **`LoginViewModelProvider` is `@Observable`** and owns `private(set) var viewModel: LoginViewModel`,
+  behind **`LoginViewModelProviderProtocol` (`var viewModel { get }`)**.
+- **Resolved via DI** (`CLAUDE.md` §4 — providers are container-resolved): registered in
+  `AuthRegistrationCommand` and pulled with `@Resolved` in `LoginScreen.init`, stored in `@State`:
+  ```swift
+  @State private var provider: any LoginViewModelProviderProtocol
+  public init() {
+      @Resolved var resolved: LoginViewModelProviderProtocol
+      _provider = State(initialValue: resolved)
+  }
+  ```
+  Observation works through the `any` existential because dispatch reaches the concrete
+  `@Observable` accessor. Registered as a **singleton** (the container's only non-instance option);
+  for login that's fine (it resets to `.idle` on `SignedOut`) and `@Resolved` returns the cached
+  instance, so there's **no per-`init` churn** that a `= LoginViewModelProvider()` default would cause.
+- **The View reads the state directly** — no `isLoading` / `errorMessage` view vars. The body matches
+  the enum inline: `if case .error(let message) = provider.viewModel { … }` and
+  `if case .loading = provider.viewModel { … }`.
+- **Deleted:** `TPAUIKit/SwiftUI/ViewModelStore.swift` (+ its test) — Login was its only user.
+- **Kept:** `AnyViewModelProviderDelegate` / `ViewModelProviderDelegate` — still used by the UIKit
+  screens (Discovery, Profile, Search). They stay until those screens migrate.
+- **Tests** read `provider.viewModel` directly; the capture-delegate scaffolding is gone.
+
+**Ownership / lifetime:** the weak delegate existed in UIKit to avoid a VC↔provider retain cycle.
+With `@Observable`, the view's `@State` owns the provider (strong, correct lifetime) and the provider
+references no view — no cycle. The provider's `observationTasks` are `@ObservationIgnored` (plumbing,
+not view state) and cancelled in `deinit`.
+
+**Pattern going forward:** SwiftUI screens get an `@Observable` VMP owned via `@State`; UIKit screens
+keep the delegate-push VMP. `CLAUDE.md` §3/§4 describe the UIKit (View↔VC) form — the SwiftUI variant
+(this) is a candidate to fold into the contract, as `SWIFTUI_PILOT.md` §9 anticipated.
+
+### 6b. `EventObservations` — a subscription bag (event-observation boilerplate, abstracted)
+
+The VMP used to hand-roll an `[Task]` array, a `[weak self]` loop per event, and a `deinit` that
+cancelled them. That's now a reusable `TPAFoundation/Events/EventObservations.swift`:
+
+```swift
+@MainActor public final class EventObservations {
+    private var tasks: [Task<Void, Never>] = []
+    public func observe<Target: AnyObject, E: Event>(
+        _ type: E.Type, on target: Target,
+        perform handler: @escaping @MainActor (Target, E) -> Void
+    ) {
+        tasks.append(Task { [weak target] in
+            for await event in events(of: type) { guard let target else { return }; handler(target, event) }
+        })
+    }
+    deinit { tasks.forEach { $0.cancel() } }
+}
+```
+
+The VMP shrinks to:
+```swift
+@ObservationIgnored private let observations = EventObservations()
+init() {
+    observations.observe(LoginEvents.Submitting.self, on: self) { provider, _ in provider.viewModel = .loading }
+    observations.observe(LoginEvents.Failed.self,     on: self) { provider, event in provider.viewModel = .error(message: event.reason) }
+    observations.observe(LoginEvents.Succeeded.self,  on: self) { provider, _ in provider.viewModel = .idle }
+    observations.observe(AuthEvents.SignedOut.self,   on: self) { provider, _ in provider.viewModel = .idle }
+}
+// no [Task] array, no [weak self], no deinit
+```
+
+Why this shape:
+- **`on target:` (held weakly)** removes the `[weak self]` ceremony *and* makes the retain cycle
+  (self → bag → task → closure → self) impossible by construction — the handler gets the still-alive
+  target or the subscription quietly ends.
+- **Lifecycle by ownership:** the observer owns the bag; releasing the observer deinits the bag,
+  which cancels every task, which terminates each `AsyncStream`, which removes its `NotificationCenter`
+  observer. No manual teardown. (Tested: `EventObservationsTests` covers delivery *and* that releasing
+  the bag stops observation.)
+- **`events(of:)` is unchanged and stays** — it's the correct Swift-6 bridge precisely because it
+  extracts the `Sendable` `Event` payload inside the synchronous observer block, keeping the
+  non-`Sendable` `Notification` out of the async boundary. `NotificationCenter.notifications(named:)`
+  would *look* cleaner but yields `Notification` into the `for await`, which fights strict concurrency.
+  `EventObservations` abstracts the *task/lifecycle* layer on top of that bridge, not the bridge itself.
+
+**On `TaskGroup` for the provider's `observationTasks` (asked during review):** not a good fit. A
+task group models **structured fan-out/fan-in bounded by an async function's scope** — spawn N
+children, `await` their combined completion/results, all torn down when the scope exits. The
+provider's observers are instead **independent, infinite loops bound to the object's lifetime**
+(init→deinit), with nothing to await or aggregate. To use a group you'd still have to park it inside
+one long-lived `Task` stored on the object (sync `init` can't `await` a group) and cancel that in
+`deinit` — so you trade an `[Task]` for one `Task` hosting nested `addTask` calls, with no real gain.
+If a single cancellation handle were ever wanted, the *correct* group form on iOS 17 is
+`withDiscardingTaskGroup` (it releases child results instead of accumulating them) hosted in one
+stored task — but at four fixed observers the plain array is clearer and equally correct.

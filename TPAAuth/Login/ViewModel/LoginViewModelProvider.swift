@@ -1,71 +1,31 @@
 import Foundation
 import TPACore
 import TPAFoundation
-import TPAUIKit
+import Observation
 
 @MainActor
 protocol LoginViewModelProviderProtocol: AnyObject {
-    var delegate: AnyViewModelProviderDelegate<LoginViewModel>? { get set }
+    var viewModel: LoginViewModel { get }
 }
 
+/// Read-only source of the login screen's render state. SwiftUI-native: it's `@Observable` and the
+/// `LoginScreen` resolves it and owns it via `@State`, so writing `viewModel` re-renders the view
+/// automatically — no delegate, no bridge. Data flows one way: the provider is the only writer; the
+/// view only reads.
 @MainActor
+@Observable
 final class LoginViewModelProvider: LoginViewModelProviderProtocol {
-    private let viewModelFactory: LoginViewModelFactory
 
-    private var isLoading = false
-    private var errorMessage: String?
+    private(set) var viewModel: LoginViewModel = .idle
 
-    /// One long-lived consumer task per observed event; cancelled in `deinit` to remove the
-    /// underlying observers.
-    private var observationTasks: [Task<Void, Never>] = []
+    /// Owns the event subscriptions; cancels them when this provider is released. Not view state.
+    @ObservationIgnored
+    private let observations = EventObservations()
 
-    weak var delegate: AnyViewModelProviderDelegate<LoginViewModel>? {
-        didSet { updateDelegate() }
-    }
-
-    init(viewModelFactory: LoginViewModelFactory = .init()) {
-        self.viewModelFactory = viewModelFactory
-        observationTasks = [
-            Task { [weak self] in
-                for await _ in events(of: LoginEvents.Submitting.self) { self?.handleSubmitting() }
-            },
-            Task { [weak self] in
-                for await event in events(of: LoginEvents.Failed.self) { self?.handleFailed(event) }
-            },
-            Task { [weak self] in
-                for await _ in events(of: LoginEvents.Succeeded.self) { self?.handleReset() }
-            },
-            Task { [weak self] in
-                for await _ in events(of: AuthEvents.SignedOut.self) { self?.handleReset() }
-            },
-        ]
-    }
-
-    deinit {
-        observationTasks.forEach { $0.cancel() }
-    }
-
-    private func handleSubmitting() {
-        isLoading = true
-        errorMessage = nil
-        updateDelegate()
-    }
-
-    private func handleFailed(_ event: LoginEvents.Failed) {
-        isLoading = false
-        errorMessage = event.reason
-        updateDelegate()
-    }
-
-    private func handleReset() {
-        isLoading = false
-        errorMessage = nil
-        updateDelegate()
-    }
-
-    private func updateDelegate() {
-        delegate?.viewModelUpdated(
-            viewModelFactory.make(isLoading: isLoading, errorMessage: errorMessage)
-        )
+    init() {
+        observations.observe(LoginEvents.Submitting.self, on: self) { provider, _ in provider.viewModel = .loading }
+        observations.observe(LoginEvents.Failed.self, on: self) { provider, event in provider.viewModel = .error(message: event.reason) }
+        observations.observe(LoginEvents.Succeeded.self, on: self) { provider, _ in provider.viewModel = .idle }
+        observations.observe(AuthEvents.SignedOut.self, on: self) { provider, _ in provider.viewModel = .idle }
     }
 }
