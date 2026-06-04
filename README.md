@@ -225,6 +225,7 @@ In-depth design docs live in [`Documentation/`](Documentation/):
 | [BUILD_GUIDE.md](Documentation/BUILD_GUIDE.md) | Targets, schemes, `xcconfig`/branding and localization layout. |
 | [NETWORK_INFRASTRUCTURE.md](Documentation/NETWORK_INFRASTRUCTURE.md) | The async networking stack (Endpoint / processors / HTTPClient). |
 | [TESTING.md](Documentation/TESTING.md) | Snapshot + UI test infrastructure. |
+| [SWIFTUI_PILOT.md](Documentation/SWIFTUI_PILOT.md) | Plan for running the unidirectional architecture on SwiftUI views (Login pilot). |
 
 ---
 
