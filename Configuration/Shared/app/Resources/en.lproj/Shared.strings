@@ -1,0 +1,112 @@
+/* ============================================================
+   Shared.strings — copy common to ALL brands (Panda/Rooster/Koala).
+   Compiled into the app's main bundle. Looked up by L10n after the
+   per-brand `Brand` table. Use %ANIMAL% for the brand display name.
+   Resolve at call sites with `localize("key")` — never pass a bundle.
+   ============================================================ */
+
+/* MARK: - Tabs */
+"tabs.discovery" = "Discovery";
+"tabs.profile" = "Profile";
+
+/* MARK: - Login screen */
+"login.navigationTitle" = "Sign In";
+"login.title" = "Welcome Back";
+"login.subtitle" = "Sign in to continue";
+"login.email.placeholder" = "Email address";
+"login.password.placeholder" = "Password (6+ characters)";
+"login.button.login" = "Log In";
+"login.loading.message" = "Signing in…";
+
+/* MARK: - Login errors */
+"login.error.invalidCredentials" = "Invalid email or password. Please try again.";
+"login.error.networkError" = "A network error occurred. Please check your connection.";
+"login.error.unknown" = "Something went wrong. Please try again.";
+
+/* MARK: - Discovery / Search home */
+"discovery.underConstruction.title" = "Under Construction";
+"discovery.underConstruction.subtitle" = "Great things are coming. Check back soon!";
+"discovery.search.prompt" = "Discover products with %ANIMAL%";
+
+/* MARK: - Search */
+"search.keywords.placeholder" = "Search products";
+"search.button.title" = "Search";
+"search.results.navigationTitle" = "Results";
+"search.results.loading" = "Searching…";
+"search.results.empty.title" = "No results";
+"search.results.empty.subtitle" = "Try different keywords or filters.";
+"search.results.count" = "%d results";
+"search.results.error.title" = "Something went wrong";
+"search.results.error.subtitle" = "Check your connection and try again.";
+"search.results.error.retry" = "Retry";
+
+/* MARK: - Search filters */
+"search.filters.title" = "Filters";
+"search.filters.button" = "Filters";
+"search.filters.category" = "Category";
+"search.filters.category.any" = "Any category (e.g. smartphones)";
+"search.filters.sort" = "Sort by";
+"search.filters.sort.relevance" = "Relevance";
+"search.filters.sort.title" = "Title";
+"search.filters.sort.price" = "Price";
+"search.filters.sort.rating" = "Rating";
+"search.filters.maxPrice" = "Max price";
+"search.filters.minRating" = "Minimum rating";
+"search.filters.inStock" = "In stock only";
+"search.filters.brand" = "Brand";
+"search.filters.brand.any" = "Any";
+"search.filters.apply" = "Apply";
+"search.filters.reset" = "Reset";
+
+/* MARK: - Profile header */
+"profile.header.namePlaceholder" = "Your Name";
+"profile.header.emailPlaceholder" = "Add email";
+
+/* MARK: - Edit personal details */
+"editProfile.navigationTitle" = "Edit Details";
+"editProfile.firstName.label" = "First name";
+"editProfile.firstName.placeholder" = "Enter your first name";
+"editProfile.lastName.label" = "Last name";
+"editProfile.lastName.placeholder" = "Enter your last name";
+"editProfile.email.label" = "Email";
+"editProfile.email.placeholder" = "Enter your email";
+"editProfile.button.save" = "Save";
+
+/* MARK: - Validation */
+"validation.required" = "This field is required";
+"validation.invalidEmail" = "Enter a valid email address";
+
+/* MARK: - Common */
+"common.add" = "Add";
+
+/* MARK: - Profile: Languages section */
+"profile.languages.title" = "Languages";
+"profile.languages.empty.message" = "Add the languages you speak and how well you speak them.";
+"profile.languages.empty.add" = "Add a language";
+"profile.languages.edit.addTitle" = "Add language";
+"profile.languages.edit.editTitle" = "Edit language";
+"profile.languages.edit.nameLabel" = "Language";
+"profile.languages.edit.namePlaceholder" = "Start typing a language";
+"profile.languages.edit.searching" = "Searching…";
+"profile.languages.edit.levelLabel" = "Proficiency";
+"profile.languages.edit.delete" = "Delete language";
+
+/* MARK: - Profile: Spacer (mock, empty) section */
+"profile.spacer.title" = "Spacer";
+
+/* MARK: - Profile: Next role section */
+"profile.nextRole.title" = "Next role";
+"profile.nextRole.add" = "Add";
+"profile.nextRole.availability.title" = "Availability";
+"profile.nextRole.salary.title" = "Salary requirement";
+"profile.nextRole.salary.placeholder" = "e.g. $120,000";
+"profile.nextRole.approachability.title" = "Approachability";
+
+/* MARK: - Profile actions */
+"profile.button.settings" = "Settings";
+
+/* MARK: - Settings */
+"settings.title" = "Settings";
+"settings.row.notifications" = "Notifications";
+"settings.row.privacy" = "Privacy";
+"settings.row.logout" = "Log out";

@@ -1,0 +1,6 @@
+/* ============================================================
+   Brand.strings — Koala-specific overrides.
+   This table is looked up BEFORE Shared.strings, so any key defined
+   here overrides the shared copy for the Koala brand only.
+   Leave empty when the shared copy (with the %ANIMAL% token) is enough.
+   ============================================================ */

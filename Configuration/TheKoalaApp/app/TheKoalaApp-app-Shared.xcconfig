@@ -1,0 +1,8 @@
+#include "../../project/project-Shared.xcconfig"
+
+PRODUCT_NAME = TheKoalaApp
+INFOPLIST_FILE = Configuration/TheKoalaApp/Info.plist
+GENERATE_INFOPLIST_FILE = NO
+
+// Clean brand name used for the %ANIMAL% localization token (no Dev suffix).
+BRAND_NAME = Koala

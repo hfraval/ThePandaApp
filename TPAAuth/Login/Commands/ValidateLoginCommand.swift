@@ -1,0 +1,8 @@
+import Foundation
+import TPAFoundation
+
+struct ValidateLoginCommand {
+    func callAsFunction(email: String, password: String) -> Bool {
+        email.isValidEmail && !password.trimmed.isEmpty && password.count >= 6
+    }
+}

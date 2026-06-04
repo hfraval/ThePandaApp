@@ -1,0 +1,7 @@
+#include "TheKoalaApp-app-Shared.xcconfig"
+#include "../../project/project-Release.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.thepandaapp.koala
+APP_BUNDLE_DISPLAY_NAME = Koala
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIconKoala
+EXCLUDED_SOURCE_FILE_NAMES = DevAppIcons.xcassets
