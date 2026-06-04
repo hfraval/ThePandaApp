@@ -1,0 +1,7 @@
+#include "TheRoosterApp-app-Shared.xcconfig"
+#include "../../project/project-Release.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.thepandaapp.rooster
+APP_BUNDLE_DISPLAY_NAME = Rooster
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIconRooster
+EXCLUDED_SOURCE_FILE_NAMES = DevAppIcons.xcassets

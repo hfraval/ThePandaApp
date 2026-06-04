@@ -1,0 +1,6 @@
+#include "TheKoalaApp-app-Shared.xcconfig"
+#include "../../project/project-Debug.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.thepandaapp.koala.debug
+APP_BUNDLE_DISPLAY_NAME = Koala (Dev)
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIconKoalaDev

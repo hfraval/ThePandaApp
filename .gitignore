@@ -1,0 +1,62 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+## User settings
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+
+## Build / derived data
+build/
+DerivedData/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Generated project — project.yml is the source of truth.
+## Regenerate with `xcodegen generate` after cloning.
+*.xcodeproj
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods / Carthage (not used here, ignored defensively)
+Pods/
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Snapshot test reference images — generated locally, not tracked for now.
+__Snapshots__/
+
+# AI tooling — local assistant config + context, not part of the codebase.
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*
+.github/copilot-instructions.md
+
+# Internal docs — work logs / proposals / reference notes, not public documentation.
+Documentation/API_SELECTION.md
+Documentation/APP_NAME_PROPOSALS.md
+Documentation/PROJECT_REVIEW.md
+Documentation/UIKIT_MIGRATION.md
+
+# Misc
+*.log
+*~

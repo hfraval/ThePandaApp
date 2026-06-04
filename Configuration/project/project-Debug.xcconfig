@@ -1,0 +1,6 @@
+#include "project-Shared.xcconfig"
+
+// Debug-only compile flags
+OTHER_SWIFT_FLAGS = $(inherited) -DDEBUG
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym

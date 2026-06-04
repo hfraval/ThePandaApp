@@ -1,0 +1,6 @@
+#include "TheRoosterApp-app-Shared.xcconfig"
+#include "../../project/project-Debug.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.thepandaapp.rooster.debug
+APP_BUNDLE_DISPLAY_NAME = Rooster (Dev)
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIconRoosterDev

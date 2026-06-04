@@ -1,0 +1,6 @@
+#include "ThePandaApp-app-Shared.xcconfig"
+#include "../../project/project-Debug.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.thepandaapp.panda.debug
+APP_BUNDLE_DISPLAY_NAME = Panda (Dev)
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIconPandaDev

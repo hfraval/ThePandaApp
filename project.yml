@@ -1,0 +1,553 @@
+name: ThePandaApp
+
+options:
+  bundleIdPrefix: com.thepandaapp
+  deploymentTarget:
+    iOS: "15.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+  defaultConfig: Debug
+  createIntermediateGroups: true
+
+# Build settings common to ALL targets. Overridden by xcconfig files for app targets.
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+    ENABLE_TESTABILITY: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+configs:
+  Debug: debug
+  Release: release
+
+# Reference-only files surfaced in the Xcode navigator (not part of any build target):
+# the architecture write-ups + project docs.
+fileGroups:
+  - CLAUDE.md
+  - README.md
+  - Documentation
+
+targets:
+
+  # ─────────────────────────────────────────────
+  # LAYER 0: Foundation Frameworks
+  # ─────────────────────────────────────────────
+
+  TPAFoundation:
+    type: framework
+    platform: iOS
+    sources: [TPAFoundation]
+    settings:
+      base:
+        PRODUCT_NAME: TPAFoundation
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPALogging:
+    type: framework
+    platform: iOS
+    sources: [TPALogging]
+    dependencies:
+      - target: TPAFoundation
+    settings:
+      base:
+        PRODUCT_NAME: TPALogging
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPAUIKit:
+    type: framework
+    platform: iOS
+    sources: [TPAUIKit]
+    dependencies:
+      - target: TPAFoundation
+    settings:
+      base:
+        PRODUCT_NAME: TPAUIKit
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  # ─────────────────────────────────────────────
+  # LAYER 1: Infrastructure Frameworks
+  # ─────────────────────────────────────────────
+
+  TPACore:
+    type: framework
+    platform: iOS
+    sources: [TPACore]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+    settings:
+      base:
+        PRODUCT_NAME: TPACore
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPANetwork:
+    type: framework
+    platform: iOS
+    sources: [TPANetwork]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+    settings:
+      base:
+        PRODUCT_NAME: TPANetwork
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPAAnalytics:
+    type: framework
+    platform: iOS
+    sources: [TPAAnalytics]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+    settings:
+      base:
+        PRODUCT_NAME: TPAAnalytics
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  # ─────────────────────────────────────────────
+  # LAYER 2: Feature Frameworks
+  # ─────────────────────────────────────────────
+
+  TPAAuth:
+    type: framework
+    platform: iOS
+    sources: [TPAAuth]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPAAnalytics
+    settings:
+      base:
+        PRODUCT_NAME: TPAAuth
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPADiscovery:
+    type: framework
+    platform: iOS
+    sources: [TPADiscovery]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPAAnalytics
+      - target: TPASearch
+    settings:
+      base:
+        PRODUCT_NAME: TPADiscovery
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPAProfile:
+    type: framework
+    platform: iOS
+    sources: [TPAProfile]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPANetwork
+      - target: TPAAnalytics
+      - target: TPASettings
+    settings:
+      base:
+        PRODUCT_NAME: TPAProfile
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPASearch:
+    type: framework
+    platform: iOS
+    sources: [TPASearch]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPAAnalytics
+      - target: TPANetwork
+    settings:
+      base:
+        PRODUCT_NAME: TPASearch
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  TPASettings:
+    type: framework
+    platform: iOS
+    sources: [TPASettings]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPAAnalytics
+    settings:
+      base:
+        PRODUCT_NAME: TPASettings
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+
+  # ─────────────────────────────────────────────
+  # Test Support Framework
+  # ─────────────────────────────────────────────
+
+  TPAUnitTestFoundation:
+    type: framework
+    platform: iOS
+    sources: [TPAUnitTestFoundation]
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPACore
+      - target: TPANetwork
+      - target: TPAAnalytics
+      - target: TPAAuth
+      - target: TPAProfile
+      - target: TPADiscovery
+      - target: TPASearch
+      - target: TPASettings
+    settings:
+      base:
+        PRODUCT_NAME: TPAUnitTestFoundation
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+        ENABLE_TESTING_SEARCH_PATHS: YES
+
+  # ─────────────────────────────────────────────
+  # LAYER 3: App Targets — 3 animals, 1 codebase
+  # xcconfig files drive bundle ID, display name, icon per brand.
+  # ─────────────────────────────────────────────
+
+  ThePandaApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Configuration/ThePandaApp/AppIcons.xcassets
+      - path: Configuration/ThePandaApp/DevAppIcons.xcassets
+      - path: Configuration/ThePandaApp/Images.xcassets
+      - path: Configuration/ThePandaApp/shared/resources/Colors.xcassets
+      - path: Configuration/Shared/app/Resources
+      - path: Configuration/ThePandaApp/app/Resources
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPANetwork
+      - target: TPAAnalytics
+      - target: TPAAuth
+      - target: TPADiscovery
+      - target: TPAProfile
+      - target: TPASearch
+      - target: TPASettings
+    configFiles:
+      Debug: Configuration/ThePandaApp/app/ThePandaApp-app-Debug.xcconfig
+      Release: Configuration/ThePandaApp/app/ThePandaApp-app-Release.xcconfig
+
+  TheRoosterApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Configuration/TheRoosterApp/AppIcons.xcassets
+      - path: Configuration/TheRoosterApp/DevAppIcons.xcassets
+      - path: Configuration/TheRoosterApp/Images.xcassets
+      - path: Configuration/TheRoosterApp/shared/resources/Colors.xcassets
+      - path: Configuration/Shared/app/Resources
+      - path: Configuration/TheRoosterApp/app/Resources
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPANetwork
+      - target: TPAAnalytics
+      - target: TPAAuth
+      - target: TPADiscovery
+      - target: TPAProfile
+      - target: TPASearch
+      - target: TPASettings
+    configFiles:
+      Debug: Configuration/TheRoosterApp/app/TheRoosterApp-app-Debug.xcconfig
+      Release: Configuration/TheRoosterApp/app/TheRoosterApp-app-Release.xcconfig
+
+  TheKoalaApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Configuration/TheKoalaApp/AppIcons.xcassets
+      - path: Configuration/TheKoalaApp/DevAppIcons.xcassets
+      - path: Configuration/TheKoalaApp/Images.xcassets
+      - path: Configuration/TheKoalaApp/shared/resources/Colors.xcassets
+      - path: Configuration/Shared/app/Resources
+      - path: Configuration/TheKoalaApp/app/Resources
+    dependencies:
+      - target: TPAFoundation
+      - target: TPALogging
+      - target: TPAUIKit
+      - target: TPACore
+      - target: TPANetwork
+      - target: TPAAnalytics
+      - target: TPAAuth
+      - target: TPADiscovery
+      - target: TPAProfile
+      - target: TPASearch
+      - target: TPASettings
+    configFiles:
+      Debug: Configuration/TheKoalaApp/app/TheKoalaApp-app-Debug.xcconfig
+      Release: Configuration/TheKoalaApp/app/TheKoalaApp-app-Release.xcconfig
+
+  # ─────────────────────────────────────────────
+  # Unit Test Targets
+  # ─────────────────────────────────────────────
+
+  ThePandaAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [AppTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPACore
+      - target: TPAAuth
+      - target: TPADiscovery
+      - target: TPAProfile
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.tests
+
+  TPAAuthTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPAAuthTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPAAuth
+      - target: TPACore
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.auth.tests
+
+  TPADiscoveryTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPADiscoveryTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPADiscovery
+      - target: TPAAnalytics
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.discovery.tests
+
+  TPAProfileTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPAProfileTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPAProfile
+      - target: TPACore
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.profile.tests
+
+  TPASearchTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPASearchTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPASearch
+      - target: TPAAnalytics
+      - target: TPANetwork
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.search.tests
+
+  TPASettingsTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPASettingsTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPASettings
+      - target: TPACore
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.settings.tests
+
+  TPANetworkTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPANetworkTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPANetwork
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.network.tests
+
+  TPAFoundationTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPAFoundationTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPAFoundation
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.foundation.tests
+
+  TPACoreTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPACoreTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPACore
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.core.tests
+
+  TPAUIKitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TPAUIKitTests]
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPAUIKit
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.uikit.tests
+
+  # ─────────────────────────────────────────────
+  # UI Test Targets
+  # ─────────────────────────────────────────────
+
+  AppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [AppUITests]
+    dependencies:
+      - target: ThePandaApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.uitests
+
+  # ─────────────────────────────────────────────
+  # Screenshot Test Targets
+  # ─────────────────────────────────────────────
+
+  ScreenshotTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ScreenshotTests
+        excludes:
+          - "**/__Snapshots__/**"
+    dependencies:
+      - target: ThePandaApp
+      - target: TPAUnitTestFoundation
+      - target: TPACore
+      - target: TPAAuth
+      - target: TPADiscovery
+      - target: TPAProfile
+      - target: TPASearch
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ThePandaApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThePandaApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.thepandaapp.panda.screenshots
+
+schemes:
+  ThePandaApp:
+    build:
+      targets:
+        ThePandaApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ThePandaAppTests
+        - TPAAuthTests
+        - TPADiscoveryTests
+        - TPAProfileTests
+        - TPASearchTests
+        - TPASettingsTests
+        - TPANetworkTests
+        - TPAFoundationTests
+        - TPACoreTests
+        - TPAUIKitTests
+        - ScreenshotTests
+        - AppUITests
+
+  TheRoosterApp:
+    build:
+      targets:
+        TheRoosterApp: all
+    run:
+      config: Debug
+
+  TheKoalaApp:
+    build:
+      targets:
+        TheKoalaApp: all
+    run:
+      config: Debug
+
+  AppUITests:
+    build:
+      targets:
+        AppUITests: all
+        ThePandaApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - AppUITests
