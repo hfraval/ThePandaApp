@@ -52,11 +52,11 @@ views (`PersonalDetailsView`, `LanguagesSectionView`, …) directly; each child 
 provider-store. No `CoordinatedStackContentViewController` needed inside SwiftUI — `if`/`switch` +
 `@StateObject` do the show/hide/update job.
 
-### iOS 15 constraint
-Deployment target is **iOS 15**, so the `@Observable` macro (iOS 17+) and `NavigationStack` are
-**not** available. The pilot uses the iOS-15-safe stack: `ObservableObject` + `@Published` +
-`@StateObject` / `@ObservedObject`. (If we later raise the floor to iOS 17 we can swap the store for
-`@Observable` with no architectural change.)
+### iOS 15 constraint (superseded — floor now iOS 17)
+The pilot originally shipped on an **iOS 15** floor, so it used the iOS-15-safe stack:
+`ObservableObject` + `@Published` + `@StateObject`. The deployment target has since been raised to
+**iOS 17** and the store swapped to `@Observable` (`@State` at the call site) with **no architectural
+change** — exactly as predicted here. See `SWIFTUI_CONCURRENCY_MODERNIZATION.md`.
 
 ### Does it respect unidirectional flow?
 Yes, if the SwiftUI view obeys the same rules the VC did (see §6): it **reads** the view model from

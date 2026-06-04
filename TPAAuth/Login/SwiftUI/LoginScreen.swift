@@ -9,7 +9,7 @@ import TPAFoundation
 /// service/event layer is unchanged.
 public struct LoginScreen: View {
 
-    @StateObject private var store = ViewModelStore<LoginViewModel>(LoginViewModelProvider()) {
+    @State private var store = ViewModelStore<LoginViewModel>(LoginViewModelProvider()) {
         provider, delegate in provider.delegate = delegate
     }
 

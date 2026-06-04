@@ -1,7 +1,7 @@
 import Foundation
 import TPAFoundation
 
-struct LoginViewModelFactory {
+struct LoginViewModelFactory: Sendable {
     func make(isLoading: Bool = false, errorMessage: String? = nil) -> LoginViewModel {
         LoginViewModel(
             navigationTitle: localize("login.navigationTitle"),

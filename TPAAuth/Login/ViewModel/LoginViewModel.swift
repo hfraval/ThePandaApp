@@ -1,6 +1,6 @@
 import Foundation
 
-public struct LoginViewModel: Equatable {
+public struct LoginViewModel: Equatable, Sendable {
     let navigationTitle: String
     let title: String
     let subtitle: String

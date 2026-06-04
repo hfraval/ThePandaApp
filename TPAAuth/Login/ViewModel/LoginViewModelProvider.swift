@@ -15,31 +15,49 @@ final class LoginViewModelProvider: LoginViewModelProviderProtocol {
     private var isLoading = false
     private var errorMessage: String?
 
+    /// One long-lived consumer task per observed event; cancelled in `deinit` to remove the
+    /// underlying observers.
+    private var observationTasks: [Task<Void, Never>] = []
+
     weak var delegate: AnyViewModelProviderDelegate<LoginViewModel>? {
         didSet { updateDelegate() }
     }
 
     init(viewModelFactory: LoginViewModelFactory = .init()) {
         self.viewModelFactory = viewModelFactory
-        observe(self, event: LoginEvents.Submitting.self, selector: #selector(handleSubmitting))
-        observe(self, event: LoginEvents.Failed.self, selector: #selector(handleFailed(_:)))
-        observe(self, event: LoginEvents.Succeeded.self, selector: #selector(handleReset))
-        observe(self, event: AuthEvents.SignedOut.self, selector: #selector(handleReset))
+        observationTasks = [
+            Task { [weak self] in
+                for await _ in events(of: LoginEvents.Submitting.self) { self?.handleSubmitting() }
+            },
+            Task { [weak self] in
+                for await event in events(of: LoginEvents.Failed.self) { self?.handleFailed(event) }
+            },
+            Task { [weak self] in
+                for await _ in events(of: LoginEvents.Succeeded.self) { self?.handleReset() }
+            },
+            Task { [weak self] in
+                for await _ in events(of: AuthEvents.SignedOut.self) { self?.handleReset() }
+            },
+        ]
     }
 
-    @objc private func handleSubmitting() {
+    deinit {
+        observationTasks.forEach { $0.cancel() }
+    }
+
+    private func handleSubmitting() {
         isLoading = true
         errorMessage = nil
         updateDelegate()
     }
 
-    @objc private func handleFailed(_ note: Notification) {
+    private func handleFailed(_ event: LoginEvents.Failed) {
         isLoading = false
-        errorMessage = (note.eventPayload() as LoginEvents.Failed?)?.reason
+        errorMessage = event.reason
         updateDelegate()
     }
 
-    @objc private func handleReset() {
+    private func handleReset() {
         isLoading = false
         errorMessage = nil
         updateDelegate()

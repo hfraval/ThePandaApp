@@ -30,17 +30,27 @@ final class LoginLoadingResetTests: AppTestCase {
         try await super.tearDown()
     }
 
-    func test_submitting_thenSucceeded_clearsLoading() {
+    /// Events now reach the provider through an `AsyncStream` consumed on a `Task`, so let the
+    /// run loop drain after posting before asserting on the pushed view model.
+    private func drain() async {
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
+    }
+
+    func test_submitting_thenSucceeded_clearsLoading() async {
         post(LoginEvents.Submitting())
+        await drain()
         XCTAssertTrue(capture.latest?.isLoading == true)
 
         post(LoginEvents.Succeeded(userId: "1"))
+        await drain()
         XCTAssertFalse(capture.latest?.isLoading == true)
     }
 
-    func test_signedOut_resetsToIdle() {
+    func test_signedOut_resetsToIdle() async {
         post(LoginEvents.Submitting())
         post(AuthEvents.SignedOut())
+        await drain()
         XCTAssertFalse(capture.latest?.isLoading == true)
         XCTAssertNil(capture.latest?.errorMessage)
     }

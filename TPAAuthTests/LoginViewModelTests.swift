@@ -123,20 +123,30 @@ final class LoginViewModelProviderTests: AppTestCase {
 
     private var current: LoginViewModel { capture.latest! }
 
+    /// Events now reach the provider through an `AsyncStream` consumed on a `Task`, so let the
+    /// run loop drain after posting before asserting on the pushed view model.
+    private func drain() async {
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
+    }
+
     func test_initial_notLoading_noError() {
+        // The first push is synchronous (delegate `didSet`), so no drain is needed here.
         XCTAssertFalse(current.isLoading)
         XCTAssertNil(current.errorMessage)
     }
 
-    func test_submittingEvent_showsLoading_clearsError() {
+    func test_submittingEvent_showsLoading_clearsError() async {
         post(LoginEvents.Submitting())
+        await drain()
         XCTAssertTrue(current.isLoading)
         XCTAssertNil(current.errorMessage)
     }
 
-    func test_failedEvent_hidesLoading_showsError() {
+    func test_failedEvent_hidesLoading_showsError() async {
         post(LoginEvents.Submitting())
         post(LoginEvents.Failed(reason: "Nope"))
+        await drain()
         XCTAssertFalse(current.isLoading)
         XCTAssertEqual(current.errorMessage, "Nope")
     }
